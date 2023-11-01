@@ -8,12 +8,13 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="600" Width="800">
     <Grid>
-        <glWpfControl:GLWpfControl
-            x:Name="OpenTkControl"
-            Loaded="OpenTkControl_OnLoaded"
-            Unloaded="OpenTkControl_OnUnloaded"
-            Render="OpenTkControl_OnRender"
-            SizeChanged="OpenTkControl_OnSizeChanged" />
-        <Button Height="80" Width="200">HI! :)</Button>
+            <glWpfControl:GLWpfControl
+                x:Name="OpenTkControl"
+                MouseWheel="OpenTkControl_OnMouseWheel"
+                Loaded="OpenTkControl_OnLoaded"
+                Unloaded="OpenTkControl_OnUnloaded"
+                Render="OpenTkControl_OnRender"
+                SizeChanged="OpenTkControl_OnSizeChanged" />
+        <!-- <Button Height="80" Width="200">HI! :)</Button> -->
     </Grid>
 </Window>

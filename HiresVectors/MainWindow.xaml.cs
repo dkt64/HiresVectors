@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Input;
 using HiresVectors.Common;
 using OpenTK.Graphics.OpenGL4;
 using Window = System.Windows.Window;
 using HiresVectors.Common;
+using OpenTK.Mathematics;
 using OpenTK.Wpf;
 
 namespace HiresVectors {
@@ -18,6 +20,8 @@ namespace HiresVectors {
             -0.5f, -0.5f, 0.0f, // bottom left
             -0.5f, 0.5f, 0.0f, // top left
         };
+
+        private Vector2i _size = new Vector2i(800, 600);
 
         // Then, we create a new array: indices.
         // This array controls how the EBO will use those vertices to create triangles
@@ -36,6 +40,12 @@ namespace HiresVectors {
         // Add a handle for the EBO
         private int _elementBufferObject;
 
+        // We need an instance of the new camera class so it can manage the view and projection matrix code.
+        // We also need a boolean set to true to detect whether or not the mouse has been moved for the first time.
+        // Finally, we add the last position of the mouse so we can calculate the mouse offset easily.
+        private Camera _camera;
+
+        private double _time;
 
         public MainWindow() {
             InitializeComponent();
@@ -48,10 +58,20 @@ namespace HiresVectors {
         }
 
         private void OpenTkControl_OnRender(TimeSpan delta) {
+            _time += delta.Milliseconds;
+
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
             // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             _shader?.Use();
+
+            var model = Matrix4.Identity * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time/10));
+
+            if (_shader != null) {
+                _shader.SetMatrix4("model", model);
+                _shader.SetMatrix4("view", _camera.GetViewMatrix());
+                _shader.SetMatrix4("projection", _camera.GetProjectionMatrix());
+            }
 
             // Because ElementArrayObject is a property of the currently bound VAO,
             // the buffer you will find in the ElementArrayBuffer will change with the currently bound VAO.
@@ -67,7 +87,11 @@ namespace HiresVectors {
         }
 
         private void OpenTkControl_OnSizeChanged(object sender, SizeChangedEventArgs e) {
-            GL.Viewport(0, 0, (int)e.NewSize.Width, (int)e.NewSize.Height);
+            GL.Viewport(0, 0, _size.X, _size.Y);
+            // We need to update the aspect ratio once the window has been resized.
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+            if (_camera != null)
+                _camera.AspectRatio = _size.X / (float)_size.Y;
         }
 
         private void OpenTkControl_OnLoaded(object sender, RoutedEventArgs e) {
@@ -99,6 +123,10 @@ namespace HiresVectors {
 
             _shader = new Shader("Shaders/shader.vert", "Shaders/shader.frag");
             _shader.Use();
+
+            // We initialize the camera so that it is 3 units back from where the rectangle is.
+            // We also give it the proper aspect ratio.
+            _camera = new Camera(Vector3.UnitZ * 3, _size.X / (float)_size.Y);
         }
 
         private void OpenTkControl_OnUnloaded(object sender, RoutedEventArgs e) {
@@ -112,6 +140,10 @@ namespace HiresVectors {
             GL.DeleteVertexArray(_vertexArrayObject);
 
             GL.DeleteProgram(_shader.Handle);
+        }
+
+        private void OpenTkControl_OnMouseWheel(object sender, MouseWheelEventArgs e) {
+            _camera.Fov -= e.Delta / 20;
         }
     }
 }
